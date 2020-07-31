@@ -5,7 +5,7 @@
                      "cj_sat": 0.5,
                      "gamma": true,
                      "gblur": true},
-          "root_sintel": "/Data/flow_dataset/MPI_Sintel",
+          "root_sintel": "/mnt/HDdata/adrian/Datasets/MPI-Sintel/",
           "run_at": true,
           "test_shape": [448, 1024],
           "train_n_frames": 2,
