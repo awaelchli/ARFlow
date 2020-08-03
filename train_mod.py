@@ -5,14 +5,29 @@ from easydict import EasyDict
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 
-from models.arflow import ARFlow
+from models.sintel_raw import SintelRawFlow
+from models.sintel_ar import SintelARFlow
 from utils.torch_utils import init_seed
+
+
+def get_model_class(name):
+    if name == 'Sintel':
+        return SintelRawFlow
+    elif name == 'Sintel_AR':
+        return SintelARFlow
+    elif name == 'KITTI':
+        raise NotImplementedError(name)
+    elif name == 'KITTI_AR':
+        raise NotImplementedError(name)
+    else:
+        raise NotImplementedError(name)
 
 
 def main(args, cfg):
     init_seed(cfg.seed)
     logger = WandbLogger(project='arflow')
-    model = ARFlow(cfg)
+    model_class = get_model_class(cfg.trainer)
+    model = model_class(cfg)
     trainer = Trainer.from_argparse_args(
         args,
         logger=logger
