@@ -51,6 +51,9 @@ class ARFlow(LightningModule):
         cfg.valid_size = min(cfg.valid_size, valid_size)
         return valid_loader
 
+    def test_dataloader(self):
+        return self.val_dataloader()
+
     def _init_model(self, model):
         if self.cfg.pretrained_model:
             epoch, weights = load_checkpoint(self.cfg.pretrained_model)

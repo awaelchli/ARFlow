@@ -58,3 +58,9 @@ class SintelRawFlow(ARFlow):
             'val_loss': log_dict['val_epe_0'],
             'log': log_dict
         }
+
+    def test_step(self, *args, **kwargs):
+        return self.validation_step(*args, **kwargs)
+
+    def test_epoch_end(self, outputs):
+        return self.validation_epoch_end(outputs)

@@ -10,3 +10,5 @@ opencv-python>=3.0,<4.0
 fast_slic
 tensorboardX
 spatial-correlation-sampler
+
+git+https://github.com/awaelchli/mlutils.git@master

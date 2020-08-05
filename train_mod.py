@@ -2,12 +2,12 @@ import json
 import argparse
 from easydict import EasyDict
 
-from pytorch_lightning import Trainer
+from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 from models.sintel_raw import SintelRawFlow
 from models.sintel_ar import SintelARFlow
-from utils.torch_utils import init_seed
 
 
 def get_model_class(name):
@@ -24,13 +24,20 @@ def get_model_class(name):
 
 
 def main(args, cfg):
-    init_seed(cfg.seed)
+    seed_everything(cfg.seed)
     logger = WandbLogger(project='arflow')
+    checkpoint = ModelCheckpoint(
+        filepath=None,
+        monitor='val_loss',
+        mode='min',
+        save_last=True,
+    )
     model_class = get_model_class(cfg.trainer)
     model = model_class(cfg)
     trainer = Trainer.from_argparse_args(
         args,
-        logger=logger
+        logger=logger,
+        checkpoint_callback=checkpoint,
     )
     trainer.fit(model)
 
