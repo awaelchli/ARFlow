@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from utils.warp_utils import flow_warp
 # from .correlation_package.correlation import Correlation
 from .correlation_native import Correlation
+# from spatial_correlation_sampler import SpatialCorrelationSampler
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, dilation=1, isReLU=True):
@@ -125,6 +126,8 @@ class PWCLite(nn.Module):
                                 max_displacement=self.search_range, stride1=1,
                                 stride2=1, corr_multiply=1)
 
+        # self.corr = SpatialCorrelationSampler(kernel_size=1, patch_size=9, stride=1, padding=0, dilation=1, dilation_patch=1)
+
         self.dim_corr = (self.search_range * 2 + 1) ** 2
         self.num_ch_in = 32 + (self.dim_corr + 2) * (self.n_frames - 1)
 
@@ -181,6 +184,7 @@ class PWCLite(nn.Module):
 
             # correlation
             out_corr = self.corr(x1, x2_warp)
+            # out_corr = self.corr(x1.contiguous(), x2_warp.contiguous()).flatten(1, 2)
             out_corr_relu = self.leakyRELU(out_corr)
 
             # concat and estimate flow
