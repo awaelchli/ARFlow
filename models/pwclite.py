@@ -6,6 +6,9 @@ from utils.warp_utils import flow_warp
 # from .correlation_package.correlation import Correlation
 from .correlation_native import Correlation
 # from spatial_correlation_sampler import SpatialCorrelationSampler
+from spatial_correlation_sampler import spatial_correlation_sample
+
+use_native = False
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1, dilation=1, isReLU=True):
@@ -122,11 +125,10 @@ class PWCLite(nn.Module):
         self.n_frames = cfg.n_frames
         self.reduce_dense = cfg.reduce_dense
 
-        self.corr = Correlation(pad_size=self.search_range, kernel_size=1,
-                                max_displacement=self.search_range, stride1=1,
-                                stride2=1, corr_multiply=1)
-
-        # self.corr = SpatialCorrelationSampler(kernel_size=1, patch_size=9, stride=1, padding=0, dilation=1, dilation_patch=1)
+        # self.corr = Correlation(pad_size=self.search_range, kernel_size=1,
+        #                         max_displacement=self.search_range, stride1=1,
+        #                         stride2=1, corr_multiply=1)
+        self.corr_cpu = Correlation(max_displacement=4)
 
         self.dim_corr = (self.search_range * 2 + 1) ** 2
         self.num_ch_in = 32 + (self.dim_corr + 2) * (self.n_frames - 1)
@@ -144,6 +146,18 @@ class PWCLite(nn.Module):
                                        conv(96, 32, kernel_size=1, stride=1, dilation=1),
                                        conv(64, 32, kernel_size=1, stride=1, dilation=1),
                                        conv(32, 32, kernel_size=1, stride=1, dilation=1)])
+
+    def corr(self, x0, x1):
+        if use_native or x0.device == torch.device('cpu'):
+            return self.corr_cpu(x0, x1)
+
+        out_corr = spatial_correlation_sample(
+            input1=x0.contiguous(), input2=x1.contiguous(),
+            kernel_size=1, patch_size=(self.search_range * 2 + 1), stride=1, padding=0, dilation_patch=1
+        )
+        out_corr /= x0.shape[1]  # native takes mean, so need to divide by channels
+        out_corr = out_corr.flatten(1, 2)
+        return out_corr
 
     def num_parameters(self):
         return sum(
@@ -184,7 +198,7 @@ class PWCLite(nn.Module):
 
             # correlation
             out_corr = self.corr(x1, x2_warp)
-            # out_corr = self.corr(x1.contiguous(), x2_warp.contiguous()).flatten(1, 2)
+
             out_corr_relu = self.leakyRELU(out_corr)
 
             # concat and estimate flow
